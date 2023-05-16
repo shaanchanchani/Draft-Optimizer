@@ -1,6 +1,7 @@
 import streamlit as st 
 import pandas as pd
 import re
+import time
 
 @st.cache_data
 def loadData():
@@ -25,6 +26,44 @@ def handle_user_first_pick():
     if st.session_state.ufp_key:
         st.session_state['user_first_pick'] = st.session_state.ufp_key
 
+def draft(df):
+    initialize_teams(st.session_state['num_teams'])
+
+    draft_board_column, team_info_column = st.columns([3, 1])  # adjust the numbers to adjust column width
+
+    user_pick_number = st.session_state['user_first_pick']
+    user_next_pick = user_pick_number #initializing
+
+    pick_num = 1
+    total_picks = int(st.session_state['num_teams']) * 14
+
+    current_team_picking = ((pick_num - 1) % st.session_state['num_teams']) + 1
+
+    with draft_board_column:
+        st.selectbox(f'With pick number {pick_num} in the draft, Team {current_team_picking} selected', df['Player'], key = 'pick_sel_key')
+        st.header("Draft Board")
+        st.dataframe(df, use_container_width = True)
+
+    with team_info_column:
+        with st.expander("Roster", expanded = True):
+            for key, value in st.session_state[str(st.session_state['user_first_pick'])].items():
+                if value is None:
+                    st.write(key)
+                else:
+                    st.write(value)
+
+        with st.expander("View another team's roster", expanded = False):
+            team_to_display = st.selectbox('Select team to view', [f'Team {i}' for i in range(1, st.session_state['num_teams'] + 1) if i != st.session_state['user_first_pick']], label_visibility='hidden')
+
+            teamID = int(re.sub(r'\D', '', team_to_display))
+
+            for key, value in st.session_state[f'{teamID - 1}'].items():
+                if value is None:
+                    st.write(key)
+                else:
+                    st.write(value)
+
+
 def main():
     APP_TITLE = 'Fantasy Football Snake Draft Optimizer'
     st.set_page_config(APP_TITLE, layout = 'wide')
@@ -32,6 +71,9 @@ def main():
 
     if 'num_teams' not in st.session_state: st.session_state['num_teams'] = 0
     if 'user_first_pick' not in st.session_state: st.session_state['user_first_pick'] = -1
+    if 'draft_state' not in st.session_state: st.session_state['draft_state'] = 0
+
+    # if 'user_next_pick' not in st.session_state: st.session_state['user_next_pick'] = 0
 
     if st.session_state['num_teams'] == 0:
         st.number_input("How many teams are in your draft?", on_change = handle_num_teams, key = 'num_teams_key', step = 1, value = 0)
@@ -40,24 +82,11 @@ def main():
         st.number_input("What slot are you drafting from?", on_change = handle_user_first_pick, key = 'ufp_key', step = 1, value = 0)
 
     if st.session_state['num_teams'] != 0 and st.session_state['user_first_pick'] != 0:
-        initialize_teams(st.session_state['num_teams'])
+        st.session_state['draft_state'] = 1
+    
+    if st.session_state['draft_state'] == 1:
+        draft(df)
 
-        draft_board_column, team_info_column = st.columns([3, 1])  # adjust the numbers to adjust column width
-
-        draft_board_column.header("Draft Board")
-        draft_board_column.dataframe(df, use_container_width = True)
-
-        with team_info_column:
-            with st.expander("View another team's roster", expanded = False):
-                team_to_display = st.selectbox('Select team to view', [f'Team {i}' for i in range(1, st.session_state['num_teams'] + 1) if i != st.session_state['user_first_pick']])
-
-                teamID = int(re.sub(r'\D', '', team_to_display))
-
-                for key, value in st.session_state[f'{teamID - 1}'].items():
-                    if value is None:
-                        st.write(key)
-                    else:
-                        st.write(value)
 
 if __name__ == "__main__":
     main()
