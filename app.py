@@ -1,5 +1,6 @@
 import streamlit as st 
 import pandas as pd
+import re
 
 @st.cache_data
 def loadData():
@@ -39,8 +40,6 @@ def main():
         st.number_input("What slot are you drafting from?", on_change = handle_user_first_pick, key = 'ufp_key', step = 1, value = 0)
 
     if st.session_state['num_teams'] != 0 and st.session_state['user_first_pick'] != 0:
-        st.write("Starting Draft")
-
         initialize_teams(st.session_state['num_teams'])
 
         draft_board_column, team_info_column = st.columns([3, 1])  # adjust the numbers to adjust column width
@@ -48,14 +47,17 @@ def main():
         draft_board_column.header("Draft Board")
         draft_board_column.dataframe(df, use_container_width = True)
 
-        # Use a selectbox to choose which team to display
-        team_to_display = team_info_column.selectbox('Select a team to display:', [i for i in range(1, st.session_state['num_teams'] + 1) if i != st.session_state['user_first_pick']])
+        with team_info_column:
+            with st.expander("View another team's roster", expanded = False):
+                team_to_display = st.selectbox('Select team to view', [f'Team {i}' for i in range(1, st.session_state['num_teams'] + 1) if i != st.session_state['user_first_pick']])
 
-        for key, value in st.session_state[f'{team_to_display - 1}'].items():
-            if value is None:
-                team_info_column.write(key)
-            else:
-                team_info_column.write(value)
+                teamID = int(re.sub(r'\D', '', team_to_display))
+
+                for key, value in st.session_state[f'{teamID - 1}'].items():
+                    if value is None:
+                        st.write(key)
+                    else:
+                        st.write(value)
 
 if __name__ == "__main__":
     main()
