@@ -4,7 +4,6 @@ import re
 from st_aggrid import AgGrid
 from st_aggrid.grid_options_builder import GridOptionsBuilder
 
-
 def initialize_teams(num_teams):
     for i in range(1,num_teams+1):
         positions = ['QB', 'RB1', 'RB2', 'WR1', 'WR2', 'TE', 'FLEX', 'B1', 'B2', 'B3', 'B4', 'B5', 'B6', 'B7']
@@ -20,8 +19,47 @@ def handle_user_first_pick():
         st.session_state['user_first_pick'] = st.session_state.ufp_key
 
 def handle_make_pick():
-    pass
+    if st.session_state.pick_key:
+        st.session_state.pick_num = st.session_state.pick_num + 1
+        st.session_state[st.session_state.current_team_picking] = assign_player(st.session_state[st.session_state.current_team_picking], st.session_state.pick_sel_key, st.session_state.df)
+        st.session_state.df = st.session_state.df[st.session_state.df['Player'] != st.session_state.pick_sel_key]
 
+def assign_player(team, player, df):
+    position = df.loc[df['Player'] == player, 'POS'].values[0]
+    if position == 'QB' and team['QB'] is None:
+        team['QB'] = player
+    elif position == 'RB':
+        if team['RB1'] is None:
+            team['RB1'] = player
+        elif team['RB2'] is None:
+            team['RB2'] = player
+        elif team['FLEX'] is None:
+            team['FLEX'] = player
+        else:
+            for i in range(1, 8):
+                if team[f'B{i}'] is None:
+                    team[f'B{i}'] = player
+                    break
+    elif position == 'WR':
+        if team['WR1'] is None:
+            team['WR1'] = player
+        elif team['WR2'] is None:
+            team['WR2'] = player
+        elif team['FLEX'] is None:
+            team['FLEX'] = player
+        else:
+            for i in range(1, 8):
+                if team[f'B{i}'] is None:
+                    team[f'B{i}'] = player
+                    break
+    elif position == 'TE' and team['TE'] is None:
+        team['TE'] = player
+    else:
+        for i in range(1, 8):
+            if team[f'B{i}'] is None:
+                team[f'B{i}'] = player
+                break
+    return team
 
 def draft():
     initialize_teams(st.session_state['num_teams'])
@@ -31,18 +69,16 @@ def draft():
     user_pick_number = st.session_state['user_first_pick']
     user_next_pick = user_pick_number #initializing
 
-    pick_num = 1
-    total_picks = int(st.session_state['num_teams']) * 14
+    total_picks = int(st.session_state['num_teams']) * 14 #accounting for 7 starters and benchspots (no D/ST and K)
 
 
-    current_team_picking = ((pick_num - 1) % st.session_state['num_teams']) + 1
+    st.session_state.current_team_picking = ((st.session_state.pick_num - 1) % st.session_state.num_teams) + 1
 
     with draft_board_column:
         undrafted_player_list = st.session_state.df['Player']
-        selected_player = st.selectbox(f'With pick number {pick_num} in the draft, Team {current_team_picking} selected', undrafted_player_list, key = 'pick_sel_key')
-        if st.button('Make pick', on_click = handle_make_pick, key = 'pick_key'):
-            st.session_state.df = st.session_state.df[st.session_state.df['Player'] != selected_player]
-
+        selected_player = st.selectbox(f'With pick number {st.session_state.pick_num} in the draft, Team {st.session_state.current_team_picking} selected', undrafted_player_list, key = 'pick_sel_key')
+        
+        st.button('Make pick', on_click = handle_make_pick, key = 'pick_key')
         st.header("Draft Board")
         st.dataframe(st.session_state.df, use_container_width = True)
 
@@ -66,14 +102,13 @@ def draft():
                 else:
                     st.write(value)
 
-
 def main():
     APP_TITLE = 'Fantasy Football Snake Draft Optimizer'
     st.set_page_config(APP_TITLE, layout = 'wide')
-    # df = loadData()
 
     if 'num_teams' not in st.session_state: st.session_state['num_teams'] = 0
     if 'user_first_pick' not in st.session_state: st.session_state['user_first_pick'] = -1
+    if 'current_team_picking' not in st.session_state: st.session_state['current_team_picking'] = 1 
     if 'draft_started' not in st.session_state: st.session_state['draft_started'] = False
     if 'df' not in st.session_state:
         df = pd.read_csv('FantasyPros_2022_Overall_ADP_Rankings.csv')
@@ -81,8 +116,8 @@ def main():
         df = df[df['POS'].isin(['QB', 'RB', 'WR', 'TE'])]
         df = df[['Player','Team','Bye','POS','AVG']]
         st.session_state.df = df.dropna(how='all')
-
-    # if 'user_next_pick' not in st.session_state: st.session_state['user_next_pick'] = 0
+    
+    if 'pick_num' not in st.session_state: st.session_state['pick_num'] = 1
 
     if st.session_state['num_teams'] == 0:
         st.number_input("How many teams are in your draft?", on_change = handle_num_teams, key = 'num_teams_key', step = 1, value = 0)
