@@ -73,6 +73,47 @@ def create_pick_order():
     
     return pick_order
 
+def is_starting_position(position, team):
+    if position == 'QB' and team['QB'] is None:
+        return True
+    elif position == 'RB' and (team['RB1'] is None or team['RB2'] is None or team['FLEX'] is None):
+        return True
+    elif position == 'WR' and (team['WR1'] is None or team['WR2'] is None or team['FLEX'] is None):
+        return True
+    elif position == 'TE' and team['TE'] is None:
+        return True
+    else:
+        return False
+
+def teams_need_position(pos, teams_to_check):
+    count = 0 
+    for i in teams_to_check:
+        if pos == 'RB':
+            if st.session_state[f'{i}']['RB1'] is None or st.session_state[f'{i}']['RB2'] is None or (st.session_state[f'{i}']['FLEX'] is None and not st.session_state[f'{i}']['WR1'] and not st.session_state[f'{i}']['WR2']):
+                count += 1
+        elif pos == 'WR':
+            if st.session_state[f'{i}']['WR1'] is None or st.session_state[f'{i}']['WR2'] is None or (st.session_state[f'{i}']['FLEX'] is None and not st.session_state[f'{i}']['RB1'] and not st.session_state[f'{i}']['RB2']):
+                count += 1
+        else:  # For 'QB' and 'TE'
+            if st.session_state[f'{i}'][pos] is None:
+                count += 1
+    return count
+        
+
+def calculate_scores(df, teams_to_check):
+    df['Score'] = 1 / (df['AVG'] / (1 + df['POS'].apply(lambda pos: teams_need_position(pos,teams_to_check))))
+    return df
+
+def get_teams_between_picks(pick_order):
+    value = pick_order[st.session_state.pick_num]
+    arr_slice = []
+    for i in range(st.session_state.pick_num, len(pick_order)):
+        if pick_order[i] == value:
+            return arr_slice
+        arr_slice.append(pick_order[i])
+    
+    return []
+
 def draft():
     initialize_teams(st.session_state['num_teams'])
 
@@ -88,6 +129,13 @@ def draft():
         undrafted_player_list = st.session_state.df['Player']
         selected_player = st.selectbox(f'With pick number {st.session_state.pick_num} in the draft, Team {st.session_state.current_team_picking} selected...', undrafted_player_list, key = 'pick_sel_key')
         st.button('Make pick', on_click = handle_make_pick, key = 'pick_key')
+
+        if st.session_state.current_team_picking == st.session_state.user_first_pick:
+            st.header("You're on the board!")
+            st.write("Suggested picks are")
+            current_draft_board = st.session_state.df.copy(deep=True)
+            scores_df = calculate_scores(current_draft_board, get_teams_between_picks(pick_order))
+
         st.header("Draft Board")
         st.dataframe(st.session_state.df, use_container_width = True)
 
@@ -128,10 +176,12 @@ def main():
     if 'pick_num' not in st.session_state: st.session_state['pick_num'] = 1
 
     if st.session_state['num_teams'] == 0:
-        st.number_input("How many teams are in your draft?", on_change = handle_num_teams, key = 'num_teams_key', step = 1, value = 0)
+        padcol1, center_col,padcol2 = st.columns([2, 1, 2])  
+        center_col.number_input("How many teams are in your draft?", on_change = handle_num_teams, key = 'num_teams_key', step = 1, value = 0)
 
     if st.session_state['user_first_pick'] == 0:
-        st.number_input("What slot are you drafting from?", on_change = handle_user_first_pick, key = 'ufp_key', step = 1, value = 0)
+        padcol1, center_col,padcol2 = st.columns([2, 1, 2])  
+        center_col.number_input("What slot are you drafting from?", on_change = handle_user_first_pick, key = 'ufp_key', step = 1, value = 0)
 
     if st.session_state['num_teams'] != 0 and st.session_state['user_first_pick'] != 0:
         st.session_state['draft_started'] = True
