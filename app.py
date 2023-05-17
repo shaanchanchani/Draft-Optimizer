@@ -61,27 +61,35 @@ def assign_player(team, player, df):
                 break
     return team
 
+
+def create_pick_order():
+    pick_order = []
+
+    for i in range(1, st.session_state.num_teams * 14 + 1):
+        if i % (2 * st.session_state.num_teams) <= st.session_state.num_teams:
+            pick_order.append(i % st.session_state.num_teams if i % st.session_state.num_teams != 0 else st.session_state.num_teams)
+        else:
+            pick_order.append(2 * st.session_state.num_teams - i % (2 * st.session_state.num_teams) + 1)
+    
+    return pick_order
+
 def draft():
     initialize_teams(st.session_state['num_teams'])
 
     draft_board_column, team_info_column = st.columns([3, 1])  # adjust the numbers to adjust column width
 
-    user_pick_number = st.session_state['user_first_pick']
-    user_next_pick = user_pick_number #initializing
+    pick_order = create_pick_order()
 
-    total_picks = int(st.session_state['num_teams']) * 14 #accounting for 7 starters and benchspots (no D/ST and K)
+    st.session_state.current_team_picking = pick_order[st.session_state.pick_num - 1]
 
-
-    st.session_state.current_team_picking = ((st.session_state.pick_num - 1) % st.session_state.num_teams) + 1
+    if st.session_state.current_team_picking == 0: st.session_state.current_team_picking = 1
 
     with draft_board_column:
         undrafted_player_list = st.session_state.df['Player']
-        selected_player = st.selectbox(f'With pick number {st.session_state.pick_num} in the draft, Team {st.session_state.current_team_picking} selected', undrafted_player_list, key = 'pick_sel_key')
-        
+        selected_player = st.selectbox(f'With pick number {st.session_state.pick_num} in the draft, Team {st.session_state.current_team_picking} selected...', undrafted_player_list, key = 'pick_sel_key')
         st.button('Make pick', on_click = handle_make_pick, key = 'pick_key')
         st.header("Draft Board")
         st.dataframe(st.session_state.df, use_container_width = True)
-
 
     with team_info_column:
         with st.expander("Roster", expanded = True):
