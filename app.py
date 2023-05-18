@@ -1,6 +1,7 @@
 import streamlit as st 
 import pandas as pd
 import re
+import numpy as np
 from st_aggrid import AgGrid
 from st_aggrid.grid_options_builder import GridOptionsBuilder
 
@@ -19,9 +20,11 @@ def handle_user_first_pick():
         st.session_state['user_first_pick'] = st.session_state.ufp_key
 
 def handle_make_pick():
-    if st.session_state.pick_key:
-        st.session_state.pick_num = st.session_state.pick_num + 1
+    if st.session_state.pick_key: # If make pick button pressed
+        st.session_state.pick_num = st.session_state.pick_num + 1 #Increment overall pick number
+        #Moves picked player to the roster of the current team picking 
         st.session_state[st.session_state.current_team_picking] = assign_player(st.session_state[st.session_state.current_team_picking], st.session_state.pick_sel_key, st.session_state.df)
+        #Removes picked player from dataframe
         st.session_state.df = st.session_state.df[st.session_state.df['Player'] != st.session_state.pick_sel_key]
 
 def assign_player(team, player, df):
@@ -98,10 +101,32 @@ def teams_need_position(pos, teams_to_check):
             if st.session_state[f'{i}'][pos] is None:
                 count += 1
     return count
-        
 
 def calculate_scores(df, teams_to_check):
-    df['Score'] = 1 / (df['AVG'] / (1 + df['POS'].apply(lambda pos: teams_need_position(pos,teams_to_check))))
+    #df['Score'] = 1 / (df['AVG'] / (1 + df['POS'].apply(lambda pos: teams_need_position(pos,teams_to_check))))
+
+    #Score = ADP_weight * (1/ADP) + VORP_weight * VORP + Position_weight * Position_Score + Team_Needs_weight * Team_Needs_Score
+
+    #How can I account for position strats in draft, Teams that pick on the turn can manufacture runs on positions would that be a good strat(?)
+
+    #Difference in ADP between top position player and the worst case scenario player they'd have to draft instead
+    RB_VONA = df.loc[df['POS'] == 'RB', 'ADP'].iloc[0] - df.loc[df['POS'] == 'RB', 'ADP'].iloc[len(set(teams_to_check))] 
+    WR_VONA = df.loc[df['POS'] == 'WR', 'ADP'].iloc[0] - df.loc[df['POS'] == 'WR', 'ADP'].iloc[len(set(teams_to_check))] 
+    QB_VONA = df.loc[df['POS'] == 'QB', 'ADP'].iloc[0] - df.loc[df['POS'] == 'QB', 'ADP'].iloc[len(set(teams_to_check))]
+
+    conditions = [
+    df['POS'] == 'RB',
+    df['POS'] == 'WR',
+    df['POS'] == 'QB'
+    ]
+    values = [RB_VONA, WR_VONA, QB_VONA]
+
+    df['VONA'] = np.select(conditions, values)
+
+    df['PN'] = df['POS'].apply(lambda pos: teams_need_position(pos,teams_to_check))
+
+    df['Score'] = st.session_state.ADP_weight*((1/df['ADP'])*100) + st.session_state.VONA_weight*(df['VONA']) + st.session_state.positional_needs_weight*(df['PN'])
+
     return df
 
 def get_teams_between_picks(pick_order):
@@ -114,16 +139,35 @@ def get_teams_between_picks(pick_order):
     
     return []
 
+def is_starting_position(position, team):
+    if position == 'QB' and team['QB'] is None:
+        return True
+    elif position == 'RB' and (team['RB1'] is None or team['RB2'] is None or team['FLEX'] is None):
+        return True
+    elif position == 'WR' and (team['WR1'] is None or team['WR2'] is None or team['FLEX'] is None):
+        return True
+    elif position == 'TE' and team['TE'] is None:
+        return True
+    else:
+        return False
+
+def handle_ADP_weight_slider(): st.session_state.ADP_weight = st.session_state.ADP_slider
+
+def handle_VONA_weight_slider(): st.session_state.VONA_weight = st.session_state.VONA_slider
+
+def handle_positional_needs_weight_slider(): st.session_state.positional_needs_weight = st.session_state.PN_slider
+
+
+
 def draft():
     initialize_teams(st.session_state['num_teams'])
 
     draft_board_column, team_info_column = st.columns([3, 1])  # adjust the numbers to adjust column width
 
-    pick_order = create_pick_order()
+    pick_order = create_pick_order() #Initialize snaking pick order 
 
-    st.session_state.current_team_picking = pick_order[st.session_state.pick_num - 1]
-
-    if st.session_state.current_team_picking == 0: st.session_state.current_team_picking = 1
+    st.session_state.current_team_picking = pick_order[st.session_state.pick_num - 1] # -1 bc python is index 0
+    if st.session_state.current_team_picking == 0: st.session_state.current_team_picking = 1 
 
     with draft_board_column:
         undrafted_player_list = st.session_state.df['Player']
@@ -135,12 +179,16 @@ def draft():
             st.write("Suggested picks are")
             current_draft_board = st.session_state.df.copy(deep=True)
             scores_df = calculate_scores(current_draft_board, get_teams_between_picks(pick_order))
+            top_picks = scores_df.sort_values(by='Score', ascending=False).head(5)
+
+            for _,row in top_picks.iterrows():
+                st.write(f"{row['Player']} ({row['POS']}) - Score: {row['Score']} {'*' if is_starting_position(row['POS'], st.session_state[st.session_state.current_team_picking]) else ''}")
 
         st.header("Draft Board")
         st.dataframe(st.session_state.df, use_container_width = True)
 
     with team_info_column:
-        with st.expander("Roster", expanded = True):
+        with st.expander("Your Roster", expanded = False):
             for key, value in st.session_state[str(st.session_state['user_first_pick'])].items():
                 if value is None:
                     st.write(key)
@@ -158,36 +206,58 @@ def draft():
                 else:
                     st.write(value)
 
+        with st.expander("Tune Model Parameters", expanded = False):
+            st.slider('ADP', on_change = handle_ADP_weight_slider, max_value=100, min_value=0, value = 50, key = 'ADP_slider')
+            st.slider('Positional Scarcity', on_change = handle_VONA_weight_slider, max_value=100, min_value=0, value = 50, key = 'VONA_slider')
+            st.slider('Positional Need', on_change = handle_positional_needs_weight_slider, max_value=100, min_value=0, value = 50, key = 'PN_slider')
+
+
+
 def main():
     APP_TITLE = 'Fantasy Football Snake Draft Optimizer'
     st.set_page_config(APP_TITLE, layout = 'wide')
-
+    hide_streamlit_style = """
+            <style>
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            </style>
+            """
+    #Initialize and cleans dataframe
+    if 'df' not in st.session_state:
+        df = pd.read_csv('FantasyPros_2022_Overall_ADP_Rankings.csv')
+        df = df.rename(columns={'AVG': 'ADP'})
+        df['POS'] = df['POS'].str.replace('\d+', '', regex=True)
+        df = df[df['POS'].isin(['QB', 'RB', 'WR', 'TE'])]
+        df = df[['Player','Team','Bye','POS','ADP']]
+        st.session_state.df = df.dropna(how='all')
+    
+    #Draft Control Variables
     if 'num_teams' not in st.session_state: st.session_state['num_teams'] = 0
     if 'user_first_pick' not in st.session_state: st.session_state['user_first_pick'] = -1
     if 'current_team_picking' not in st.session_state: st.session_state['current_team_picking'] = 1 
     if 'draft_started' not in st.session_state: st.session_state['draft_started'] = False
-    if 'df' not in st.session_state:
-        df = pd.read_csv('FantasyPros_2022_Overall_ADP_Rankings.csv')
-        df['POS'] = df['POS'].str.replace('\d+', '', regex=True)
-        df = df[df['POS'].isin(['QB', 'RB', 'WR', 'TE'])]
-        df = df[['Player','Team','Bye','POS','AVG']]
-        st.session_state.df = df.dropna(how='all')
-    
     if 'pick_num' not in st.session_state: st.session_state['pick_num'] = 1
 
-    if st.session_state['num_teams'] == 0:
-        padcol1, center_col,padcol2 = st.columns([2, 1, 2])  
-        center_col.number_input("How many teams are in your draft?", on_change = handle_num_teams, key = 'num_teams_key', step = 1, value = 0)
+    #Model Parameter Coefficients
+    if 'ADP_weight' not in st.session_state: st.session_state['ADP_weight'] = 50
+    if 'positional_needs_weight' not in st.session_state: st.session_state['positional_needs_weight'] = 50
+    if 'VONA_weight' not in st.session_state: st.session_state['VONA_weight'] = 50
 
+
+    #If the number of teams hasn't been specified yet (still is 0), prompt user to enter value
+    if st.session_state['num_teams'] == 0:
+        padcol1, center_col,padcol2 = st.columns([2, 1, 2])  #Padding number input widget makes it look better 
+        center_col.number_input("How many teams are in your draft?", on_change = handle_num_teams, key = 'num_teams_key', step = 1, value = 0)
+    
+    #If the slot the user is picking from hasn't been specified yet (still is 0), prompt user to enter value
     if st.session_state['user_first_pick'] == 0:
         padcol1, center_col,padcol2 = st.columns([2, 1, 2])  
         center_col.number_input("What slot are you drafting from?", on_change = handle_user_first_pick, key = 'ufp_key', step = 1, value = 0)
 
-    if st.session_state['num_teams'] != 0 and st.session_state['user_first_pick'] != 0:
-        st.session_state['draft_started'] = True
-    
-    if st.session_state['draft_started']:
-        draft()
+    #If both the previous values are set, start draft
+    if st.session_state['num_teams'] != 0 and st.session_state['user_first_pick'] != 0: st.session_state['draft_started'] = True
+
+    if st.session_state['draft_started']: draft()
 
 
 if __name__ == "__main__":
