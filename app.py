@@ -125,7 +125,7 @@ def calculate_scores(df, teams_to_check):
 
     df['PN'] = df['POS'].apply(lambda pos: teams_need_position(pos,teams_to_check))
 
-    df['Score'] = st.session_state.ADP_weight*((1/df['ADP'])*100) + st.session_state.VONA_weight*(df['VONA']) + st.session_state.positional_needs_weight*(df['PN'])
+    df['Score'] = st.session_state.ADP_weight*((1/df['ADP'])*10) + st.session_state.VONA_weight*(df['VONA']) + st.session_state.positional_needs_weight*(df['PN'])
 
     return df
 
@@ -151,11 +151,17 @@ def is_starting_position(position, team):
     else:
         return False
 
-def handle_ADP_weight_slider(): st.session_state.ADP_weight = st.session_state.ADP_slider
+def handle_ADP_weight_slider(): 
+    if st.session_state.ADP_weight != st.session_state.ADP_slider:
+        st.session_state.ADP_weight = st.session_state.ADP_slider
 
-def handle_VONA_weight_slider(): st.session_state.VONA_weight = st.session_state.VONA_slider
+def handle_VONA_weight_slider(): 
+    if st.session_state.VONA_weight != st.session_state.VONA_slider:
+        st.session_state.VONA_weight = st.session_state.VONA_slider
 
-def handle_positional_needs_weight_slider(): st.session_state.positional_needs_weight = st.session_state.PN_slider
+def handle_positional_needs_weight_slider():
+    if st.session_state.positional_needs_weight != st.session_state.PN_slider:
+        st.session_state.positional_needs_weight = st.session_state.PN_slider
 
 
 
@@ -206,13 +212,6 @@ def draft():
                 else:
                     st.write(value)
 
-        with st.expander("Tune Model Parameters", expanded = False):
-            st.slider('ADP', on_change = handle_ADP_weight_slider, max_value=100, min_value=0, value = 50, key = 'ADP_slider')
-            st.slider('Positional Scarcity', on_change = handle_VONA_weight_slider, max_value=100, min_value=0, value = 50, key = 'VONA_slider')
-            st.slider('Positional Need', on_change = handle_positional_needs_weight_slider, max_value=100, min_value=0, value = 50, key = 'PN_slider')
-
-
-
 def main():
     APP_TITLE = 'Fantasy Football Snake Draft Optimizer'
     st.set_page_config(APP_TITLE, layout = 'wide')
@@ -239,9 +238,13 @@ def main():
     if 'pick_num' not in st.session_state: st.session_state['pick_num'] = 1
 
     #Model Parameter Coefficients
-    if 'ADP_weight' not in st.session_state: st.session_state['ADP_weight'] = 50
-    if 'positional_needs_weight' not in st.session_state: st.session_state['positional_needs_weight'] = 50
-    if 'VONA_weight' not in st.session_state: st.session_state['VONA_weight'] = 50
+    with st.expander("Tune Model Parameters", expanded = False):
+            st.slider('ADP', on_change = handle_ADP_weight_slider, max_value=100, min_value=0, value = 50, key = 'ADP_slider')
+            st.slider('Positional Scarcity', on_change = handle_VONA_weight_slider, max_value=100, min_value=0, value = 50, key = 'VONA_slider')
+            st.slider('Positional Need', on_change = handle_positional_needs_weight_slider, max_value=100, min_value=0, value = 50, key = 'PN_slider')
+    if 'ADP_weight' not in st.session_state: st.session_state['ADP_weight'] = st.session_state.ADP_slider
+    if 'positional_needs_weight' not in st.session_state: st.session_state['positional_needs_weight'] = st.session_state.PN_slider
+    if 'VONA_weight' not in st.session_state: st.session_state['VONA_weight'] = st.session_state.VONA_slider
 
 
     #If the number of teams hasn't been specified yet (still is 0), prompt user to enter value
