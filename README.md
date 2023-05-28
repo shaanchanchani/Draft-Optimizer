@@ -1,7 +1,3 @@
-### Next Steps
-
-
-
 Model predicts position of next pick of a snake 12-team fantasy football draft with 48% accuracy with one guess, 81.6% accuracy with two guesses.
 
 Model trained on every pick from 60 mock drafts done on Fantasy Pros. Currently able to predict position of next pick of a snake 12-team fantasy football draft with 48% accuracy with one guess, 81.6% accuracy with two guesses.
