@@ -3,9 +3,11 @@ from bs4 import BeautifulSoup
 import re 
 import os
 import csv
+import numpy as np 
+import pandas as pd 
 
 
-def get_draft_urls(base_url):
+def get_draft_urls(base_url,num_teams,scoring_format,num_rounds):
     url_tups = []
 
     response = requests.get(base_url)
@@ -23,7 +25,7 @@ def get_draft_urls(base_url):
         rounds = row.find_all('td')[4].text
 
         # check for 12 teams and PPR scoring
-        if "12" in teams and "PPR" in scoring and 'Default' in roster_settings and '15' in rounds:
+        if num_teams in teams and scoring_format in scoring and 'Default' in roster_settings and num_rounds in rounds:
             url_tups.append(("https://draftwizard.fantasypros.com" + row.find_all('td')[6].find('a')['href'],row.find_all('td')[6].find('a')['href']))
     
     return url_tups
@@ -45,92 +47,99 @@ def scrape_draft_picks(draft_url):
     return draft_picks
 
 
-def save_to_csv(filename, data):
-    folder = 'data'
+def save_to_csv(folder,filename, data):
     if not os.path.exists(folder):
         os.makedirs(folder)
-    
     keys = data[0].keys()
-    file_path = os.path.join(folder, filename)
-    
+    file_path = os.path.join(folder, filename)  
     with open(file_path, 'w', newline='') as output_file:
         dict_writer = csv.DictWriter(output_file, keys)
         dict_writer.writeheader()
         dict_writer.writerows(data)
 
 
-def process_csv_files(directory_path):
+def process_csv_files(folder):
     # Iterate through all files in the directory
-    for filename in os.listdir(directory_path):
+    for filename in os.listdir(folder):
         # Create a temporary list to hold cleaned rows
         cleaned_rows = []
-
         # Open the CSV file
-        with open(os.path.join(directory_path, filename), 'r') as file:
+        with open(os.path.join(folder, filename), 'r') as file:
             # Create a CSV reader object
             csv_reader = csv.reader(file)
-
             # Skip the header row
             next(csv_reader)
-
             # Iterate through each row in the CSV file
             for row in csv_reader:
                 # Assuming each row is a single string, you can access the string directly
                 row_string = row[0]
-
                 # Use regular expressions to extract the desired information
                 match = re.match(r'Pick #(\d+) by (.*?): (.*?) \((.*?) - (.*?)\)', row_string)
-
                 if match:
                     pick_order = match.group(1)
                     team_name = match.group(2)
                     player_name = match.group(3)
                     player_team = match.group(4)
                     player_position = match.group(5)
-
-                    # Create the cleaned row
                     cleaned_row = [pick_order, team_name, player_name, player_team, player_position]
                     cleaned_rows.append(cleaned_row)
-        
-        # Write cleaned rows back to the CSV file
         if cleaned_rows:
-            with open(os.path.join(directory_path, filename), 'w', newline='') as file:
+            with open(os.path.join(folder, filename), 'w', newline='') as file:
                 writer = csv.writer(file)
                 writer.writerows(cleaned_rows)
 
 
 def main():
-    #url_tups = get_draft_urls('https://draftwizard.fantasypros.com/football/mock-drafts-directory/')
+
+    folder =  './dataset2'
+
+    while True:
+        try:
+            num_teams = int(input("Enter number of teams: "))
+            break  
+        except ValueError:
+            print("Invalid input. Please enter an integer.")
+
+    while True:
+        scoring_format = input("Enter 'P' for PPR or 'S' for Standard: ")
+        if scoring_format == 'P' or scoring_format == 'S':
+            break
+        else:
+            print("Invalid input. Enter 'P' or 'S'.")
+    
+    while True:
+        try:
+            num_rounds = int(input("Enter number of rounds in draft: "))
+            break  
+        except ValueError:
+            print("Invalid input. Please enter an integer.")
+    
+    links = []
+
+    while True:
+        link = input("Enter a link or '0' to finish: ")
+        
+        if link == '0':
+            break
+        
+        links.append(link)
+
+    for link in links:
+        url_tups = get_draft_urls(link,num_teams,scoring_format,num_rounds)
+
+        for tup in url_tups:
+            link = tup[0]
+            filename = tup[1]
+            filename = filename.split('/')
+            filename = 'draft_' + filename[-1]
+
+            draft_picks = scrape_draft_picks(link)
+            save_to_csv(folder,filename,draft_picks)
+
+        process_csv_files(folder)
 
 
-    # test_data = scrape_draft_picks('https://draftwizard.fantasypros.com/nfl/mock-draft/nJWflp1g')
-    # save_to_csv('test', test_data)
-    process_csv_files('./data')
-
-
-    # for tup in url_tups:
-    #     link = tup[0]
-    #     filename = tup[1]
-    #     filename = input_string.split('/')
-    #     filename = 'draft_' + parts[-1]
-
-    #     draft_picks = scrape_draft_picks(link)
-
-    #     save_to_csv(filename, draft_picks)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    
 
 
 if __name__ == "__main__":
