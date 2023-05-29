@@ -10,6 +10,6 @@ Test Accuracy w/ top 2 predictions: 83.97%
 ##### Smart Drafter Model
 Trained using every pick made by the teams with the top 4 draft scores at the end of their respective drafts. (Same 62 mock draft dataset)
 
-Test Accuracy: 48.96%
+Test Accuracy: 50.76%
 
-Test Accuracy w/ top 2 predictions: 82.70%
+Test Accuracy w/ top 2 predictions: 82.60%
