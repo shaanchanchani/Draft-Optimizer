@@ -1,12 +1,6 @@
 import os 
 import pandas as pd
 import numpy as np
-from keras.models import Sequential
-from keras.layers import Dense, LSTM, Embedding
-from keras.utils import to_categorical
-from sklearn.preprocessing import LabelEncoder
-from sklearn.model_selection import train_test_split
-
 
 #Representation 1: Accounts for players left on the board
 
@@ -39,37 +33,29 @@ def get_remaining_players_repr(df, current_pick_num):
 # 0 = Slot filled 
 def get_team_roster_repr(df, team_name, current_pick_num):
     df = df[df['pick_num'] < current_pick_num]
-    team_picks = df[df['team_name'] == team_name]
-    position_counts = pd.get_dummies(team_picks['player_pos']).sum()
+    team_df = df[df['team_name'] == team_name]
 
-    positions = ['QB', 'RB', 'WR', 'TE', 'DST', 'K']
-    max_players = {'QB': 1, 'RB': 2, 'WR': 2, 'TE': 1, 'DST': 1, 'K': 1}
-    flex = 1  # flex position
-    bench = 6
+    positions = {'QB': 0, 'RB': 0, 'WR': 0, 'TE': 0, 'FLEX': 0, 'DST' : 0, 'K' : 0, 'Bench' : 0}
+    starting_lineup = []
+    bench = []
+    team_df = team_df.sort_values('ADP')
 
-    roster_repr = []
-    for pos in positions:
-        if pos in position_counts:
-            roster_repr.append(max_players[pos] - position_counts[pos])
-        else:
-            roster_repr.append(max_players[pos])
+    for index,row in team_df.iterrows():
+            pos = row['player_pos']
 
-    # Handle flex position
-    if 'RB' in position_counts:
-        rb_extra = max(0, position_counts['RB'] - max_players['RB'])
-        if rb_extra > 0:
-            flex -= 1
-            bench -= rb_extra - 1
-    if 'WR' in position_counts and flex > 0:
-        wr_extra = max(0, position_counts['WR'] - max_players['WR'])
-        if wr_extra > 0:
-            flex -= 1
-            bench -= wr_extra - 1
+            if ((pos in ['RB', 'WR'] and positions[pos] < 2) or
+                (pos in ['QB', 'TE', 'DST', 'K'] and positions[pos] < 1)):
+                positions[pos] += 1
+            elif (pos == 'RB' and positions[pos] >= 2 and positions['FLEX'] < 1):
+                positions['FLEX'] += 1
 
-    roster_repr.append(flex)
-    bench -= sum(max(0, position_counts.get(pos, 0) - max_players[pos]) for pos in positions)
-    roster_repr.append(bench)
-    return np.array(roster_repr)
+            elif (pos == 'WR' and positions[pos] >= 2 and positions['FLEX'] < 1):
+                positions['FLEX'] += 1
+            else:
+                positions['Bench'] += 1
+
+    curr_roster = [x for x in positions.values()]
+    return np.array(curr_roster)
 
 #Forms a single state representation based on the two representations 
 def get_state_representation(df, current_pick_num, team_name, max_players=180):
@@ -84,35 +70,34 @@ def get_best_teams(df):
 
     draft_scores = {}
 
-    grouped_teams = df.groupby('team_name')
-
-    for group_name, group_indicies in grouped_teams.groups.items():
-
-        positions = {'QB': 0, 'RB': 0, 'WR': 0, 'TE': 0}
-
+    for team in df['team_name'].unique().tolist():
         starting_lineup = []
         bench = []
-
-        team_df = df.loc[group_indicies]
-        tean_df = df.sort_values('ADP')
-
+        team_df = df[df['team_name'] == f'{team}']
+        team_df = team_df.sort_values('ADP')
         for index,row in team_df.iterrows():
             pos = row['player_pos']
+            positions = {'QB': 0, 'RB': 0, 'WR': 0, 'TE': 0, 'FLEX': 0, 'Bench': 0}
 
             if ((pos in ['RB', 'WR'] and positions[pos] < 2) or
                 (pos in ['QB', 'TE'] and positions[pos] < 1)):
+                positions[pos] += 1
+                starting_lineup.append(row['ADP'])
 
+            elif (pos == 'RB' and positions[pos] >= 2 and positions['FLEX'] < 1):
+                positions['FLEX'] += 1
                 starting_lineup.append(row['ADP'])
-                positions[pos] += 1
-            #flex position case
-            elif pos in ['RB', 'WR'] and sum([value for key, value in positions.items() if key in ['RB', 'WR']]) < 3:
+
+            elif (pos == 'WR' and positions[pos] >= 2 and positions['FLEX'] < 1):
+                positions['FLEX'] += 1
                 starting_lineup.append(row['ADP'])
-                positions[pos] += 1
 
             else:
+                positions['Bench'] += 1
                 bench.append(row['ADP'])
         
-        draft_scores[str(group_name)] =  sum([i*1.5 for i in starting_lineup]) + sum(bench)
+        team_draft_score = sum([i*1.5 for i in starting_lineup]) + sum(bench)
+        draft_scores[team] =  team_draft_score
 
     draft_score_df = pd.DataFrame.from_dict(draft_scores, orient='index').reset_index()
     draft_score_df.columns = ['team_name', 'score']
@@ -123,10 +108,7 @@ def get_best_teams(df):
 def preprocess_data(data_folders):
     inputs = []
     outputs = []
-
-    # inputs_f = []
-    # outputs_f = []
-
+    
     inputs_best = []
     outputs_best = []
 
@@ -158,19 +140,11 @@ def preprocess_data(data_folders):
                         outputs_best.append(next_pick_pos)
                         best_team_distribution.append(f'Team{teamID}')
 
-    #     for input_val, output_val in zip(inputs, outputs):
-    #         if output_val not in ["K", "DST"]:
-    #             inputs_f.append(input_val)
-    #             outputs_f.append(output_val)
-
-    # inputs_f = np.array(inputs_f)
-    # outputs_f = np.array(outputs_f)
     inputs = np.array(inputs)
     outputs = np.array(outputs)
     inputs_best = np.array(inputs_best)
     outputs_best = np.array(outputs_best)
 
-    # return inputs_f,outputs_f
     return inputs,outputs,inputs_best,outputs_best,best_team_distribution
 
 def simulate_pick(df,current_pick_num,team_name):
@@ -192,16 +166,12 @@ def simulate_pick(df,current_pick_num,team_name):
         print(f'Predicted label: {pred}, Probability: {prob}')
 
 def get_top_two_accuracy(model, X_test,y_test_encoded):
-    # get the model predictions
     y_pred = model.predict(X_test)
 
-    # get the top two predictions
     top_two_pred = np.argsort(y_pred, axis=-1)[:, -2:]
 
-    # convert your one-hot encoded labels back to class indices
     y_test_class_indices = np.argmax(y_test_encoded, axis=-1)
 
-    # calculate accuracy
     correct = [y in pred for y, pred in zip(y_test_class_indices, top_two_pred)]
     accuracy = np.mean(correct)
 
@@ -214,36 +184,14 @@ def main():
 
     inputs,outputs,inputs_best,outputs_best,best_team_distribution = preprocess_data(data_folders)
 
-    X_train, X_test, y_train, y_test = train_test_split(inputs_best, outputs_best, test_size=0.3, random_state=42)
+    np.save('inputs_batch1', inputs)
+    np.save('outputs_batch1', outputs)
 
-    X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.2, random_state=42)
+    np.save('inputs_best_batch1', inputs_best)
+    np.save('outputs_best_batch1', outputs_best)
 
-    X_train = X_train.reshape((X_train.shape[0], 1, X_train.shape[1]))
-    X_val = X_val.reshape((X_val.shape[0], 1, X_val.shape[1]))
-    X_test = X_test.reshape((X_test.shape[0], 1, X_test.shape[1]))
+    np.save('batch1_best_team_distribution', best_team_distribution)
 
-    encoder = LabelEncoder()
-    y_train_encoded = encoder.fit_transform(y_train)
-    y_val_encoded = encoder.transform(y_val)
-    y_test_encoded = encoder.transform(y_test)
-    y_train_encoded = to_categorical(y_train_encoded)
-    y_val_encoded = to_categorical(y_val_encoded)
-    y_test_encoded = to_categorical(y_test_encoded)
-
-    model = Sequential()
-    model.add(LSTM(50, input_shape=(X_train.shape[1], X_train.shape[2])))
-    model.add(Dense(y_train_encoded.shape[1], activation='softmax'))
-
-    model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
-
-    history = model.fit(X_train, y_train_encoded, epochs=100, validation_data=(X_val, y_val_encoded))
-
-    loss, accuracy = model.evaluate(X_test, y_test_encoded)
-
-    print(f'Test loss: {loss}')
-    print(f'Test accuracy: {accuracy}')
-
-    get_top_two_accuracy(model, X_test, y_test_encoded)
 
     
 
