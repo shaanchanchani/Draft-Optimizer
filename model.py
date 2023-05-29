@@ -78,11 +78,59 @@ def get_state_representation(df, current_pick_num, team_name, max_players=180):
     state_repr = np.concatenate([team_roster_repr, remaining_players_repr], axis=None)
     return state_repr
 
+def get_best_teams(df):
+    df = df[df['player_pos'] != 'K']
+    df = df[df['player_pos'] != 'DST']
+
+    draft_scores = {}
+
+    grouped_teams = df.groupby('team_name')
+
+    for group_name, group_indicies in grouped_teams.groups.items():
+
+        positions = {'QB': 0, 'RB': 0, 'WR': 0, 'TE': 0}
+
+        starting_lineup = []
+        bench = []
+
+        team_df = df.loc[group_indicies]
+        tean_df = df.sort_values('ADP')
+
+        for index,row in team_df.iterrows():
+            pos = row['player_pos']
+
+            if ((pos in ['RB', 'WR'] and positions[pos] < 2) or
+                (pos in ['QB', 'TE'] and positions[pos] < 1)):
+
+                starting_lineup.append(row['ADP'])
+                positions[pos] += 1
+            #flex position case
+            elif pos in ['RB', 'WR'] and sum([value for key, value in positions.items() if key in ['RB', 'WR']]) < 3:
+                starting_lineup.append(row['ADP'])
+                positions[pos] += 1
+
+            else:
+                bench.append(row['ADP'])
+        
+        draft_scores[str(group_name)] =  sum([i*1.5 for i in starting_lineup]) + sum(bench)
+
+    draft_score_df = pd.DataFrame.from_dict(draft_scores, orient='index').reset_index()
+    draft_score_df.columns = ['team_name', 'score']
+    draft_score_df = draft_score_df.sort_values(by='score', ascending=True)
+
+    return list(draft_score_df[:4]['team_name'])
+
 def preprocess_data(data_folders):
     inputs = []
     outputs = []
-    inputs_f = []
-    outputs_f = []
+
+    # inputs_f = []
+    # outputs_f = []
+
+    inputs_best = []
+    outputs_best = []
+
+    best_team_distribution = []
 
     expected_draft_order = (list(range(1, 13)) + list(range(12, 0, -1)))*15
     expected_draft_order = expected_draft_order[:int(len(expected_draft_order)/2)]
@@ -92,6 +140,8 @@ def preprocess_data(data_folders):
             if not os.path.isdir(os.path.join(folder_path, filename)):
                 file_path = os.path.join(folder_path, filename)
                 df = pd.read_csv(file_path)
+
+                best_teams = get_best_teams(df)
                 
                 for pick_num in range(1, df['pick_num'].max()):
                     # generate the state representation for the current pick
@@ -102,16 +152,26 @@ def preprocess_data(data_folders):
                     # store the input-output pair
                     inputs.append(state_repr)
                     outputs.append(next_pick_pos)
-        
-        for input_val, output_val in zip(inputs, outputs):
-            if output_val not in ["K", "DST"]:
-                inputs_f.append(input_val)
-                outputs_f.append(output_val)
 
-    inputs_f = np.array(inputs_f)
-    outputs_f = np.array(outputs_f)
+                    if f'Team{teamID}' in best_teams:
+                        inputs_best.append(state_repr)
+                        outputs_best.append(next_pick_pos)
+                        best_team_distribution.append(f'Team{teamID}')
 
-    return inputs_f,outputs_f
+    #     for input_val, output_val in zip(inputs, outputs):
+    #         if output_val not in ["K", "DST"]:
+    #             inputs_f.append(input_val)
+    #             outputs_f.append(output_val)
+
+    # inputs_f = np.array(inputs_f)
+    # outputs_f = np.array(outputs_f)
+    inputs = np.array(inputs)
+    outputs = np.array(outputs)
+    inputs_best = np.array(inputs_best)
+    outputs_best = np.array(outputs_best)
+
+    # return inputs_f,outputs_f
+    return inputs,outputs,inputs_best,outputs_best,best_team_distribution
 
 def simulate_pick(df,current_pick_num,team_name):
     next_pick_pos = df.loc[df['pick_num'] == current_pick_num+1, 'player_pos'].values[0]
@@ -134,11 +194,11 @@ def simulate_pick(df,current_pick_num,team_name):
     
 
 def main():
-    data_folders = ['./dataset1','./dataset2']
+    data_folders = ['./dataset1_12_PPR_15','./dataset2_12_PPR_15']
 
-    inputs,outpus = preprocess_data(data_folders)
+    inputs,outputs,inputs_best,outputs_best,best_team_distribution = preprocess_data(data_folders)
 
-    X_train, X_test, y_train, y_test = train_test_split(inputs, outpus, test_size=0.3, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(inputs_best, outputs_best, test_size=0.3, random_state=42)
 
     X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.2, random_state=42)
 
