@@ -1,10 +1,15 @@
-Model predicts position of next pick of a snake 12-team fantasy football draft with 48% accuracy with one guess, 81.6% accuracy with two guesses.
+#### Current Metrics:
 
-Model trained on every pick from 60 mock drafts done on Fantasy Pros. Currently able to predict position of next pick of a snake 12-team fantasy football draft with 48% accuracy with one guess, 81.6% accuracy with two guesses.
+##### Average Drafter Model 
+Trained using every pick from 62 mock drafts. Prediction target is position of next picked player.
 
-Next Steps:
--Build a dataset containing picks made by only the teams that had the best graded team at the end of their
-draft. This can be used to train a similar but smarter model 
--Current model makes picks like the average drafter, outputs probabilities of the next pick being each position. This means we could use it to simulate mock drafts and use reinforcement learning to make the 
-optimal draft model 
--Integrate model to webapp
+Test Accuracy: 49.35%
+
+Test Accuracy w/ top 2 predictions: 83.97%
+
+##### Smart Drafter Model
+Trained using every pick made by the teams with the top 4 draft scores at the end of their respective drafts. (Same 62 mock draft dataset)
+
+Test Accuracy: 48.96%
+
+Test Accuracy w/ top 2 predictions: 82.70%

@@ -191,6 +191,22 @@ def simulate_pick(df,current_pick_num,team_name):
     for pred, prob in zip(top_two_predictions, top_two_probabilities):
         print(f'Predicted label: {pred}, Probability: {prob}')
 
+def get_top_two_accuracy(model, X_test,y_test_encoded):
+    # get the model predictions
+    y_pred = model.predict(X_test)
+
+    # get the top two predictions
+    top_two_pred = np.argsort(y_pred, axis=-1)[:, -2:]
+
+    # convert your one-hot encoded labels back to class indices
+    y_test_class_indices = np.argmax(y_test_encoded, axis=-1)
+
+    # calculate accuracy
+    correct = [y in pred for y, pred in zip(y_test_class_indices, top_two_pred)]
+    accuracy = np.mean(correct)
+
+    print(f'Top-2 accuracy: {accuracy * 100:.2f}%')
+
     
 
 def main():
@@ -226,6 +242,8 @@ def main():
 
     print(f'Test loss: {loss}')
     print(f'Test accuracy: {accuracy}')
+
+    get_top_two_accuracy(model, X_test, y_test_encoded)
 
     
 
