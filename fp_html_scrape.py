@@ -222,40 +222,53 @@ def get_raw_data(folder,num_teams,scoring_format,num_rounds):
                 save_to_csv(folder,filename,draft_picks)
 
 def main():
-    folder =  './dataset2_12_PPR_15'
+
+    folder =  './dataset3_12_PPR_15'
     num_teams,scoring_format,num_rounds = specify_draft_type()
     # get_raw_data(folder,num_teams,scoring_format,num_rounds)
 
-    #link set 1
-    # links = ['https://draftwizard.fantasypros.com/football/mock-drafts-directory/',
-    # 'https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=EcPc80nKx8eimQxNOknNHXlrCpzZIh3GyQeAokpUI15YfX8hp5iqXJt5fcj6hzHx',
-    # 'https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=7SIozv0YGmYuISY3b_ak-wI7glQivnTdVcNMRMgi699oAKoQB264w0Jbgyb0zBP7',
-    # 'https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=RiLBlOBVPNMLwNHWJLgriNcRah7agTPc3klvYWWQeWhU88JV1ACX2ObtMDt6EZ1U',
-    # 'https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=UEwstM9hkPkelB4CRmwhiKL0Fnn4TZq16y5Cdtv-ihCx80CN8Czkaw4dhEqPhLFn',
-    # 'https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=zTFh5-2rU9CrOAJ5UyJCVoEUKPMrUM3e7rTY2bD-dV2kZIL2LMqSJpIolBuqjdxW',
-    # 'https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=ix9UkF2C7K1quDJaiunab6upTIfC6X6RH89XAPNFfeGhPzAy9nkgkT7sKptAObG1',
-    # 'https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=qXJ4weYLzUNhqTKxEZlUQDZQmnMQ4FS1MQNKCwdTsHcy-CSpY7_c_tz_SX3i6Iru',
-    # 'https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=40USlRKfaDGuv8X6coenvrNyNT_9W0J_p-t_QuEuADSfOc7SXNlovV4tDjrlYljT',
-    # 'https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=1W28SFhsuEOAShNb49Zla4YFMx6QZKxcJephhSEcv2FOhloUO88OO7x3i8bKix2k]',
-    # ]
-    #link set 2 
-    links = ['https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=GNpC7oO3QpvwFNEvfXSDwD2nrkaE65xmQ7flP7z38vD_h5qSPHmiJspqHz4D6kCc',
-    'https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=_o8njykUSndtNC2ZbKi2t6b2znVs2bzX6TIKFODUprS6Xalyalx42ffEtRS-3vuY',
-    'https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=x61RmjmsiN1e9POUJaAUGpGZaZnzMJ4QBJqGYL4EwlGrhxLzfxtxE2L8gYEGZsb5',
-    'https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=-Wny2hA9HwNL3HqylzS3e_lrOOfzJyVpjdXpQkKWxV3H5pboxOL_Gwjg1UR9GCgN',
-    'https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=40tS_UbYD34tsUHpQCatvzmKEMnb-ZoWBgmM8HgoS0yF1_811o4Le_9cJ4lcno2w',
-    'https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=uNu-jZ3Smdz67KPCPK33xLv7kdvEwkZI5klO9OGbPxVS12bHMH-K508MouolNKZ7',
-    'https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=uNu-jZ3Smdz67KPCPK33xLv7kdvEwkZI5klO9OGbPxVS12bHMH-K508MouolNKZ7',
-    'https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=ZIXzXM18gFVk9UY7Yph0o0cJWZCFSeExa5NhtZKlvwgxQvmXsDOTEHI_YmuuSIBo',
-    'https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=V126C-_5scCJGrUF5k8SKXp9f4iF7Felkc040G-6QC8LLppPWmxvrCaHutRESUxY',
-    'https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=KFD2YxogFuEnVWrZKFQ-7bub7-CJWBjSE0uwK3Z-pk5j1NU23Nt2u2W2GxvcdJCC',
-    'https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=wRNcRAinnneynWGOVl6JOqS77D0atIiJuSyAuDdWolvMD-opxEWoYmVMemgWk9rD',
-    'https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=qF2QYl-jK-QYHxWn9YMqsqenhOrZc3IJayO-RmwEofOt3Gv38AoPohMX6-qb1EvH',
-    'https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=fpfVODZoD4YVfojNXH6QNueTIYvcC6R6oEJTsN0ONB1hp1ahATv_0OFvoOPhpSZ5',
-    'https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=KfkT2H5IiCUngG0HRDCyhZD78oWKjlbCF0RNfJhP2GCCQBfK0IkPqd5mYKU5S0xX',
-    'https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=nuj3axNCecVe95BweWbe1IO6e2ie3ZtIRpQ-yW-sn9UW3cdu_F_G03r8NAHlY_jU',
-    'https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=aXtgNBpbfgknj2JgHKI_8nOYNhn-DaLELRQAvQHi5v8BwlnjlQqXY1-kKCHWYTZr',
-    'https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=vYVz9nCT8N4bOI84oa7SsaFEUFT9Aziyu6olu9Yf3JzuxOjeLCj01ICrXJ-VA9dE']
+    links = ['https://draftwizard.fantasypros.com/football/mock-drafts-directory/',
+    'https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=VrV-uzSGYbq4WX5PpKsxHnUxm1qN5DUeib4cSYqinFwYBBXkte-nrDLHjSo2DKb7',
+    'https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=e6mgk4GiKm6Mp-q-eTuhgL8-4Sv0QcDf2AWFhk6YWSZgBbv42_YDzSjKr1J6voCt',
+    'https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=L983Zsk1QO8fNSG2LYv3hKnv1CeJSO-3KP3PPR0foavlwJ4vUnNggN_oBVW9ixMc',
+    'https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=KZP3y0EA-YsHgMS9MmCyLgS9QTtj1DbXOaUBW4Krs4Oe-u2IeNYiF6qTx7X8GuAU',
+    'https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=Jms5h-YPOlTp27ORFJ1tbrxd8JJl5yJOQ3-jqS3aC8xe0ltv3F7t2flhRCnUA2tK',
+    'https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=lg3Tj5XsloTjO3kBwic1fQ7fddYvexbMa6HcPnEf-GOfm2rhsEq5TpErk9yCQ9AH',
+    'https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=apU3JfQ-BuOWjuDvO3kOEZEwds7SDCm_CVFAjfuKdz9AOACLLBTQtXjzGS5PLBBB',
+    'https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=JTp_ONIfY7xI9DdJ637OM5OUA7EZNxM32gQFrA27Oyzrkm4sORKzetBCm8pPL17o',
+    'https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=rlooacoWCszh-4-6Psak9sloJbCkEftAAba5F1hyeAg_NG6c84uIokgjNfbAcekp',
+    'https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=x6OVhGdKKQIJRDT1XvyOHAOZKyOypIqkwbzxZutNY7as-lx8m1iowyTZ5rFc5dRo',
+    'https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=PCV0Ylo9L9M690a73FLIYZYmVDVfd3cLY01RnsD80F3n1i5gc6P0rS6z_FcOzL8I',
+    'https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=gA9TPYwxGKTL-ip8La3ue_FGRcT7lMVJXLvu4dc6ceOd2V7ytxS3yJOPl85ocmeu',
+    'https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=GokRm_dYnUyTLgfUFRkYuxMRBHcId1CiFw0S05XcBwopaNYeUGERmjx6Ck7TUAN9',
+    'https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=sA0QQSLDq4-dAS48qFCiQapG5AZQkyLj4dmkSeRH-BCA8zDeGZzpoC1QL80bTixw',
+    'https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=ocVv6g5FrVpDmkaZiXxRKDMIj1PsKwcraEIAqVxyoHM6XbvrKPgoHXgGeWFBFTZv',
+    'https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=QXfHVsiYPMOPK21HDsJsTbqZKwU4S0wPIZmyS5dJIznWkPk3_Pg6FJN0oGdZ0RuN',
+    'https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=mnKZ9Tg0AKFslK7nnVcqdK5YC-yyi0LK1Oi4-Rj6H194fQ6S_5Chzl8vy1Ikr5E6',
+    'https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=85cmqTE6b95cTekEmQ8G01Y5lPqWKQtHqE_ZlOH3BHSBLx3hUZSgMI_7nKKjhTJI',
+    'https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=Jbek7LiX0yKCkLOgLXTLZBd1sb-9JROcQwDN4IK4B-Dw02GRTTRMToIg-YXay-2N',
+    'https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=k0xIbhsd8TQDiMX6FfpuihDXaaSH9EMFaQxyenfhN7MdUzCAzJ5a3kaPDm6lWaeP',
+    'https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=CWezIopdPdCJIPfTDzxT0hhGpXjpo-jLTjpZVuf-gyOTqhumZyBfthyqPmBbT1tr',
+    'https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=gEYdREViqtbhNJXnd7wmVUpjHcNAM3FDTyxa001nJeMP0BEw_FhHxxD-FKq28pso',
+    'https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=zCFzex_JiiNVrbc7lq6VJt0BBVDrIL6Pt-v7kezzCW3aK4ybQllKevolEBf22seW',
+    'https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=awrRk-KEO-DRoiPtaWH3f4RDy_y3V0aX1DHGO39J-dHD04o7KybNi3FjMK_UB27g',
+    'https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=FDNsA--7osGJag2TaluEUNxEiagVBjURR6ex0EwC9-B-XPedOo_rjgQQGSD34tv6',
+    'https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=xvPO-dEpE3JdopiWMvEC3QHBhtG1zQFeA5xrKLbmYqZgfcY40WyaPOFdePYprR-g',
+    'https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=suG4qH0BJq-hL9Qcd5I1-xATD3E2Fhse5im4neP2V_7LaworswoQO7_TeiYwyjaV',
+    'https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=Cis41N-morz_1k6ozai1RDN7ZV-SCBuQ4DLfhoSP5IG6fWi3kweXYxOCrcPgF7us',
+    'https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=dcLWz8e5cGSXvVVmJQNCnMtPVFdve0c5sPmgHXfkFjWhIdQ33PPZZv2pseZxZN2l',
+    'https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=Et8mzP7wIfJLPM0ew0--iK0fEH3_0ao-ysBJeLP3pBrI_WDRCu-dYfIJ3CCpmSrY',
+    'https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=D3DBm2hhcEEhrAMYayNoBAvWgjSXQjhEUPqMCo8TiyVNzNgxKFwFIvacxeZ7Z0bM',
+    'https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=1Rw3CFj-LWWjdoA6PzNRM_NTLxkxuCjkOZ3Dpf-l6dz_j1fR2G_2w8naUk3k5V3a',
+    'https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=GCdEp0SoJKnXoLG72yMcb7xf9rbHzEr7XgCMtDUP1XMv96H5LNvBWj7yUsWMMNbF',
+    'https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=MuvD__IuZCyg2rF5pCz5hGDNMDG5mg3BIpixuEXm8UjNR00Rs8rbWGcae0O47WuB',
+    'https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=i30bNAVdChZTDMsGxGJbxZSJZiW7sopX0b6y120MBv23bsA5d5X0JbuBfdxlgJLS',
+    'https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=HTyJGH6T3Fx9ZwwEG77_fGCCs3svs59w6Ss7yMyeYIx76rDLGVW_8Wr331PTMQgq',
+    'https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=vxtMYg1S8pHKL3OWhdZnQfzshHjMNO8wcdEHQa1NizQbOGiEyMNT6cGTPKSFCEIn',
+    'https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=lC1UlC3c6ygHeprx0PZka1p4uXjDYAwPm_TC9X14Am0hMLqLAxmQIE9hHhlw1hjU',
+    'https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=9yAq_tCn1mnly0ULGtQ0Mx0LXeJ8fytciDvGcF8DThjv5uGbN5VwxtRs4-LYW0Xh',
+    'https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=eQransVR-6g79qy5cs9PuMf2ZJe8PJnfhPKduRUd1tNHmuR8tWgoJIW-ebhnelV4',
+    'https://draftwizard.fantasypros.com/football/mock-drafts-directory/?start=DsRbyOIeYYka8J3s7szaudD0RwmzeKnBAfFUPD7nsNGtZq0JCYe8gC2FImabRyqT']
     
     for link in links:
             url_tups = get_draft_urls(link,num_teams,scoring_format,num_rounds)

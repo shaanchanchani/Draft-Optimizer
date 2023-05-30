@@ -8,7 +8,7 @@ import numpy as np
 #that haven't been drafted. Next 3 elements are smallest ADP values of undrafted players at that position
 def get_remaining_players_repr(df, current_pick_num):
     default_adp = df['ADP'].max() + 10
-    remaining_players = df[df['pick_num'] > current_pick_num]
+    remaining_players = df[df['pick_num'] >= current_pick_num]
     remaining_players = remaining_players.sort_values('ADP')
 
     positions = ['QB', 'RB', 'WR', 'TE', 'DST', 'K']
@@ -108,11 +108,10 @@ def get_best_teams(df):
 def preprocess_data(data_folders):
     inputs = []
     outputs = []
-    
     inputs_best = []
     outputs_best = []
-
-    best_team_distribution = []
+    best_teams = []
+    teams = []
 
     expected_draft_order = (list(range(1, 13)) + list(range(12, 0, -1)))*15
     expected_draft_order = expected_draft_order[:int(len(expected_draft_order)/2)]
@@ -134,18 +133,21 @@ def preprocess_data(data_folders):
                     # store the input-output pair
                     inputs.append(state_repr)
                     outputs.append(next_pick_pos)
+                    teams.append(f'Team{teamID}')
 
                     if f'Team{teamID}' in best_teams:
                         inputs_best.append(state_repr)
                         outputs_best.append(next_pick_pos)
-                        best_team_distribution.append(f'Team{teamID}')
+                        best_teams.append(f'Team{teamID}')
 
     inputs = np.array(inputs)
     outputs = np.array(outputs)
     inputs_best = np.array(inputs_best)
     outputs_best = np.array(outputs_best)
+    teams = np.array(teams)
+    best_teams = np.array(best_teams)
 
-    return inputs,outputs,inputs_best,outputs_best,best_team_distribution
+    return inputs,outputs,inputs_best,outputs_best,best_teams,teams
 
 def simulate_pick(df,current_pick_num,team_name):
     next_pick_pos = df.loc[df['pick_num'] == current_pick_num+1, 'player_pos'].values[0]
@@ -180,20 +182,17 @@ def get_top_two_accuracy(model, X_test,y_test_encoded):
     
 
 def main():
-    data_folders = ['./dataset1_12_PPR_15','./dataset2_12_PPR_15']
+    batch = './batch2_12_PPR_15/'
+    data_folders = ['./dataset1_12_PPR_15','./dataset2_12_PPR_15', './dataset3_12_PPR_15']
 
-    inputs,outputs,inputs_best,outputs_best,best_team_distribution = preprocess_data(data_folders)
-
-    np.save('inputs_batch1', inputs)
-    np.save('outputs_batch1', outputs)
-
-    np.save('inputs_best_batch1', inputs_best)
-    np.save('outputs_best_batch1', outputs_best)
-
-    np.save('batch1_best_team_distribution', best_team_distribution)
-
-
+    inputs,outputs,inputs_best,outputs_best,best_teams,teams = preprocess_data(data_folders)
     
+    np.save(batch + 'inputs', inputs)
+    np.save(batch + 'outputs', outputs)
+    np.save(batch + 'inputs_best', inputs_best)
+    np.save(batch + 'outputs_best', outputs_best)
+    np.save(batch + 'best_teams', best_teams)
+    np.save(batch + 'teams', teams)
 
 
 if __name__ == "__main__":
