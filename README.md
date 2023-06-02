@@ -1,29 +1,42 @@
-## Metrics Achieved w/ LSTM:
+### Datasets:
 
-### **Average Drafter Model**
-Trained using every pick from 62 mock drafts (10561 input output pairs). Prediction target is position of next picked player.
+Average Drafter: Every pick from
+every team in 266 drafts (12 Team PPR 15 Rounds)
 
-Test Accuracy: 49.35%
+44,422 Input Output Pairs (Excluding First Round Picks)
 
-Test Accuracy using top 2 predictions: 83.97%
+Smart Drafter: Every pick from teams that ended with a top 4 draft score.
 
-### **Smart Drafter Model**
-Trained using every pick made by the teams with the top 4 draft scores at the end of their respective drafts. (Same 62 mock draft dataset, 3525 input output pairs)
+14,830 Input Output Pairs (Excluding First Round Picks)
 
-Test Accuracy: 50.76%
+### Random Forest Classifier
 
-Test Accuracy using top 2 predictions: 82.60%
+All models trained with a 10-fold cross validation procedure.
 
-## Metrics Achieved w/ Random Forest:
+#### Average Drafter Dataset:
 
-10 fold cross validation procedure
+CV Accuracy: 72.684%
+Test Accuracy: 72.747%
+Top-2 accuracy: 92.504%
 
-### **Average Drafter Model**
-CV Accuracy: 65.3% 
-Test Accuracy: 65.2%
-Top-2 accuracy: 87.85%
+Classwise Accuracy: (First Guess, Top 2 Guesses)
+DST: 87.36%, 94.68%
+K: 92.22%, 98.44%
+QB: 58.53%, 77.38%
+RB: 65.86%, 93.97%
+TE: 60.24%, 81.24%
+WR: 79.44%, 96.76%
 
-### **Smart Drafter Model**
-CV Accuracy: 66.6% 
-Test Accuracy: 64.2%
-Top-2 accuracy: 87.05%
+#### Smart Drafter Dataset:
+
+CV Accuracy: 75.455%
+Test Accuracy: 75.680%
+Top-2 accuracy: 92.493%
+
+Classwise Accuracy: (First Guess, Top 2 Guesses)
+DST: 87.54%, 93.93%
+K: 95.39%, 98.03%
+QB: 58.35%, 79.69%
+RB: 72.16%, 94.70%
+TE: 59.23%, 78.42%
+WR: 80.69%, 95.89%
