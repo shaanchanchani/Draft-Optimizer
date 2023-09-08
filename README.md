@@ -1,3 +1,9 @@
+
+[Project Summary, Notes, Next Steps](https://docs.google.com/document/d/1TivFPlW9UkWGJBgT-_FoDj85gQ0s8MCmADliTMca390/edit#heading=h.s4wruwuv05us)
+
+
+Note: This repository contains an older version of the application. The most recent iteration will not be publicly available. 
+
 ### Datasets:
 
 Average Drafter: Every pick from
